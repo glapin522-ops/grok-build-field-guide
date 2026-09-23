@@ -5,8 +5,137 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Как выжать Grok 4.6 и Grok Build</title>
   <meta name="description" content="Полевой гайд: как ставить задачу, вести длинный прогон в Grok Build и проверять результат. Неофициальный аналог статьи Anthropic про Opus 5.5.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#101010; --paper:#161616; --ink:#ece7dc; --muted:#9a9488; --line:#2a2a2a; --mark:#c9a227; --code-bg:#0c0c0c; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans","Segoe UI",sans-serif; font-size:18px; line-height:1.55; }
+    a { color:var(--ink); }
+    a:hover { color:var(--mark); }
+    .wrap { display:grid; grid-template-columns:220px minmax(0,720px); gap:48px; max-width:1080px; margin:0 auto; padding:40px 24px 96px; }
+    nav { position:sticky; top:32px; align-self:start; font-size:13px; line-height:1.4; color:var(--muted); }
+    nav strong { display:block; color:var(--ink); font-weight:600; margin-bottom:12px; letter-spacing:.04em; text-transform:uppercase; font-size:11px; }
+    nav a { display:block; color:var(--muted); text-decoration:none; padding:5px 0; border-left:2px solid transparent; padding-left:10px; }
+    nav a:hover, nav a:focus { color:var(--ink); border-left-color:var(--mark); }
+    header { margin-bottom:36px; }
+    .kicker { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 0 16px; }
+    h1 { font-size:clamp(34px,5vw,52px); line-height:1.08; font-weight:600; letter-spacing:-.03em; margin:0 0 16px; }
+    .dek { font-size:20px; color:var(--muted); margin:0 0 20px; }
+    .meta { font-size:14px; color:var(--muted); }
+    .meta span + span::before { content:" \00b7 "; }
+    h2 { font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--mark); margin:56px 0 20px; font-weight:600; }
+    h3 { font-size:26px; line-height:1.2; letter-spacing:-.02em; margin:36px 0 12px; font-weight:600; }
+    p { margin:0 0 14px; }
+    .note { border-left:2px solid var(--mark); padding:2px 0 2px 16px; color:var(--muted); margin:0 0 24px; }
+    .card { background:var(--paper); border:1px solid var(--line); padding:20px 22px; margin:0 0 28px; }
+    .card ol { margin:0; padding-left:20px; }
+    .card li { margin:0 0 10px; }
+    .label { font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:16px 0 6px; }
+    pre { background:var(--code-bg); border:1px solid var(--line); padding:16px 16px 40px; overflow-x:auto; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13.5px; line-height:1.45; white-space:pre-wrap; position:relative; margin:0 0 16px; }
+    .copy { position:absolute; right:8px; bottom:8px; background:#1c1c1c; color:var(--ink); border:1px solid var(--line); font:12px/1 "IBM Plex Sans",sans-serif; padding:6px 10px; cursor:pointer; }
+    .copy:hover { border-color:var(--mark); }
+    .fig { font-size:13px; color:var(--muted); margin:-8px 0 24px; }
+    ul.check { padding-left:18px; }
+    footer { margin-top:64px; padding-top:20px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+    @media (max-width:860px) { .wrap { grid-template-columns:1fr; padding-top:24px; } nav { position:static; } }
+  </style>
 </head>
 <body>
-<p>See repository raw index — full page lives in workspace artifacts if this stub is replaced.</p>
+  <div class="wrap">
+    <nav aria-label="Содержание">
+      <strong>Содержание</strong>
+      <a href="#first">Сначала это</a>
+      <a href="#ask">Как спрашивать</a>
+      <a href="#build">Длинный прогон</a>
+      <a href="#check">Проверка</a>
+      <a href="#chat">Чат и приложения</a>
+      <a href="#list">Чеклист</a>
+    </nav>
+    <main>
+      <header>
+        <p class="kicker">Неофициальный полевой гайд · Grok 4.6 / Grok Build</p>
+        <h1>Как выжать Grok в чате и в Grok Build</h1>
+        <p class="dek">Как ставить задачу, вести длинный прогон и проверять результат. Структура как у статьи Anthropic про Opus 5.5 — правила другие.</p>
+        <p class="meta"><span>23 сентября 2026</span><span>~8 мин</span><span>Не документ xAI</span></p>
+      </header>
+      <p>У Anthropic есть страница «Getting the most out of Opus 5.5». У xAI такого поста нет. Есть куски в <a href="https://docs.x.ai">docs.x.ai</a>, публичные системные промпты в <a href="https://github.com/xai-org/grok-prompts">xai-org/grok-prompts</a> и продукт <a href="https://x.ai/build">Grok Build</a> — ближайший аналог Claude Code.</p>
+      <p>Этот текст собран из поведения Grok 4.6 в чате и из официальных заметок по Build: AGENTS.md, memory, subagents, workflows. Это не обещание бенчмарков и не цитата Илона.</p>
+      <h2 id="first">Сначала это</h2>
+      <div class="card">
+        <p style="margin-bottom:12px"><strong>Три вещи в первой сессии</strong></p>
+        <ol>
+          <li>Отдай всю задачу. Скажи, как выглядит «готово» и когда остановиться и спросить. Потом не дёргай.</li>
+          <li>Вычеркни «подумай тщательно». Модель и так думает до ответа.</li>
+          <li>Когда длинный прогон кончился, сначала читай блок «нужно от тебя».</li>
+        </ol>
+      </div>
+      <h2 id="ask">1. Как спрашивать</h2>
+      <h3>Скажи, что такое «готово», и отпусти</h3>
+      <p class="label">Что делать</p>
+      <p>Одна реплика: вся задача, финишная черта, правило остановки.</p>
+      <pre><button class="copy" type="button">копировать</button><code>Переведи платёжные эндпоинты со старого клиента на новый.
+Готово значит: каждый эндпоинт использует новый клиент, старый клиент удалён, тест-сьют зелёный.
+Спроси меня только если тест падает по причине, которую не можешь объяснить.</code></pre>
+      <p class="fig">Рис. A — одна реплика: задача, финиш, стоп.</p>
+      <h3>Перестань просить «думать усердно»</h3>
+      <p>Удали «think carefully» и «подумай пошагово». В API глубина — reasoning_effort, в Build — флаг --effort. Для короткого ответа: «Ответь прямо».</p>
+      <h3>В дизайне называй то, чего не хочешь</h3>
+      <pre><button class="copy" type="button">копировать</button><code>Собери личную страницу с заглушечным текстом.
+Не используй: кремовый фон, курсив в заголовках, нумерацию 01 / 02 / 03, моноширинные лейблы, кнопки-пилюли, фиолетовый градиент, три одинаковые карточки с иконками.</code></pre>
+      <h3>Для фактов проси живой поиск явно</h3>
+      <pre><button class="copy" type="button">копировать</button><code>Проверь по первичным источникам, не по пересказам.
+Если берёшь X — окно последние 48 часов.
+Не смешивай знание модели и то, что нашёл сейчас.
+Что не подтвердил — пометь и скажи, где искал.</code></pre>
+      <h2 id="build">2. Длинный прогон в Grok Build</h2>
+      <p class="note">Grok Build — CLI для репозитория. Читает AGENTS.md, умеет skills, memory, subagents и workflows.</p>
+      <h3>Напиши стопы в AGENTS.md</h3>
+      <pre><button class="copy" type="button">копировать</button><code>Когда шаг не требует моего ввода — продолжай.
+Статус пиши в том же сообщении, что и следующее действие.
+Спроси только если без меня нельзя продолжить, или перед разрушительным:
+удаление данных, force-push, изменения вне этого репозитория.</code></pre>
+      <h3>Режь на субагентов и держи TASKS.md</h3>
+      <pre><button class="copy" type="button">копировать</button><code>Проверь каждый сервис в services/ на баг ретраев.
+Каждый сервис — отдельному субагенту. Проверь улики.
+Финал — одна таблица: сервис, задет да/нет, улика.
+Веди чеклист в TASKS.md.</code></pre>
+      <h2 id="check">3. Проверка</h2>
+      <pre><button class="copy" type="button">копировать</button><code>Каждый прогон заканчивай тремя заголовками:
+Blocked on me / Changed / Found.
+
+Просмотри дифф против main. Только блокеры мержа.
+Пометь всё, что не смог подтвердить, и скажи, где искал.</code></pre>
+      <h2 id="chat">4. Чат и приложения</h2>
+      <p>Здесь — Grok 4.6. Grok 4.7 с 21 сентября 2026 сидит в Cursor, Grok Build и API. Кидай файл, не пересказ. Проси готовый файл, не план файла.</p>
+      <h2 id="list">Чеклист</h2>
+      <ul class="check">
+        <li>В задаче сказано, как выглядит «готово»</li>
+        <li>Нет строк «думай усердно»</li>
+        <li>Для дизайна есть чёрный список приёмов</li>
+        <li>Скрины приложены</li>
+        <li>Для фактов явно сказано проверить сейчас</li>
+        <li>В AGENTS.md: когда идти, когда спрашивать, стоп перед разрушительным</li>
+        <li>Список задач живёт в файле</li>
+        <li>Сначала блок «нужно от меня»</li>
+      </ul>
+      <footer>
+        <p>Это не страница xAI. Ориентир по форме — <a href="https://claude.dev/blog/getting-the-most-out-of-opus-5-5/">Getting the most out of Opus 5.5</a> (Addy Osmani, 22 сентября 2026).</p>
+      </footer>
+    </main>
+  </div>
+  <script>
+    document.querySelectorAll(".copy").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var text = btn.parentElement.innerText.replace(/копировать\s*$/, "").trim();
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = "скопировано";
+          setTimeout(function () { btn.textContent = "копировать"; }, 1200);
+        });
+      });
+    });
+  </script>
 </body>
 </html>
